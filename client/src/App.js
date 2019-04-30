@@ -12,12 +12,16 @@ import Ifile from "./components/Ifile"
 class App extends Component {
   render() {
     return (
-      <div className="App">
+      <div>
       <Router history={history}>
       <NavBar/>
       <Route exact path="/" component={Home} />
       <Route exact path="/ifile" component={Ifile} />
         </Router>
+        
+        <div style={{ height: "100px", backgroundColor:"#212529", color:"white" }}>
+              copy write..
+            </div>
       </div>
     )
   }

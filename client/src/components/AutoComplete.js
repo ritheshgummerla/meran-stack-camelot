@@ -13,49 +13,50 @@ export default class AutoCompete extends Component {
   state = {
     selectedOption: null,
     emails: [],
-    isDuplicate: false
+    deletedEmail: null
   };
 
   handleChange = selectedOption => {
     const { emails } = this.state;
-    const duplicate = emails.some(item => {
-      this.setState({
-        isDuplicate: true
-      });
-      return item.email === selectedOption.value;
+    emails.push({ email: selectedOption.value });
+    this.setState({
+      selectedOption: selectedOption.value,
+      emails: emails,
+      deletedEmail: null
     });
-    if (!duplicate) {
-      emails.push({ email: selectedOption.value });
-      this.setState({
-        selectedOption: null,
-        emails: emails,
-        isDuplicate: false
-      });
-    }
+    this.props.getMails(this.state.emails)
   };
 
-  onDelete = id => {
+  onDelete = (item, id) => {
     const { emails } = this.state;
     emails.splice(id, 1);
-    this.setState({ selectedOption: null, emails: emails, isDuplicate: false });
+    this.setState({
+      selectedOption: null,
+      emails: emails,
+      deletedEmail: item.email
+    });
   };
 
   render() {
-    const options = [];
+    let options = [];
     const { Emails } = this.props;
+    const { selectedOption, emails } = this.state;
+
+    if (this.state.deletedEmail !== null) {
+      Emails.push(this.state.deletedEmail);
+    }
+
     if (Emails) {
-      Emails.map(item => {
+      Emails.sort();
+      const index = Emails.indexOf(this.state.selectedOption);
+      if (index !== -1) Emails.splice(index, 1);
+      Emails.map((item, i) => {
         options.push({ value: item, label: item });
       });
     }
-    const { selectedOption, emails } = this.state;
+
     return (
       <div>
-        {this.state.isDuplicate ? (
-          <span style={{ color: "red" }}>Email already selected</span>
-        ) : (
-          ""
-        )}
         <Select
           value={selectedOption}
           onChange={this.handleChange}
@@ -72,12 +73,12 @@ export default class AutoCompete extends Component {
             </TableHead>
             <TableBody>
               {emails.map((item, i) => (
-                <TableRow key={item.id}>
+                <TableRow key={i}>
                   <TableCell>{item.email}</TableCell>
                   <TableCell>
                     <i
-                      class="fa fa-times-circle"
-                      onClick={e => this.onDelete(i)}
+                      className="fa fa-times-circle"
+                      onClick={e => this.onDelete(item, i)}
                       style={{ fontSize: "20px", color: "#f50057" }}
                     />
                   </TableCell>
@@ -85,17 +86,6 @@ export default class AutoCompete extends Component {
               ))}
             </TableBody>
           </Table>
-          {emails.length !== 0 ? (
-            <Button
-              style={{ margin: "10px" }}
-              variant="contained"
-              color="primary"
-            >
-              Send
-            </Button>
-          ) : (
-            ""
-          )}
         </Paper>
       </div>
     );
