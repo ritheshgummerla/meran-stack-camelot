@@ -34,8 +34,6 @@ mongoose.connect(db).then(()=> console.log('db Connected..'))
 
 app.use('/api/items', Items)
 
-//serve static if in production
-
 if(process.env.NODE_ENV === 'production') {
     //Set static folder
     app.use(express.static('client/build'));
