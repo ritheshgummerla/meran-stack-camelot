@@ -4,7 +4,7 @@ const path = require('path')
 const mongoose = require("mongoose");
 const mongodb = require("mongodb")
 const Items = require('./routes/api/items');
-const fs = require('fs-extra');
+//const fs = require('fs-extra');
  //const MongoClient = require('mongodb').MongoClient;
  //const client = new MongoClient(require('./config/keys').mongoURI, { useNewUrlParser: true });
 // client.connect(err => {
@@ -20,10 +20,10 @@ const app = express();
 //     console.log('source.txt was copied to destination.txt');
 //   });
 
-  fs.copy('C:\Test', 'D:/fileTest/destination', err => {
-    if (err) return console.error(err)
-    console.log('success!')
-  })
+  // fs.copy('C:\Test', 'D:/fileTest/destination', err => {
+  //   if (err) return console.error(err)
+  //   console.log('success!')
+  // })
 
 app.use(bodyParser.json());
 
