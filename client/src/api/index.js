@@ -56,5 +56,36 @@ const sendData=async (item)=> {
     }
 }
 
+const onValidate=async (item)=> {
+    const response = await fetch("/api/items/validate",{
+        method: 'post',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(item)
+       });
+    if(!response){
+        console.log("Error")
+    }
+    const json = await response.json();
+    return {
+        data:json
+    }
+}
 
-export default {findEmail,sendData}
+const ifileApiRequest=async (data)=> {
+    const response = await fetch("/api/items/ifileDownload",{
+        method: 'post',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+       });
+    if(!response){
+        console.log("Error")
+    }
+    const json = await response.json();
+    console.log(json)
+    return {
+        data:json
+    }
+}
+
+
+export default {findEmail,sendData,onValidate,ifileApiRequest}

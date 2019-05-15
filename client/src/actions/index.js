@@ -11,5 +11,14 @@ const onsubmit = (name) => ({
   type: constants.ON_NAME_SUBMIT,
   name:name
 });
+const onValidate = (id) => ({
+  type: constants.ON_VALIDATE,
+  id:id
+});
 
-export {getEmailList,onChange,onsubmit };
+const ifileRequest = (requestData) => ({
+  type: constants.ON_REQUEST_DATA,
+  data:requestData
+});
+
+export {getEmailList,onChange,onsubmit,onValidate,ifileRequest };

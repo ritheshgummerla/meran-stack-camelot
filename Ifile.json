@@ -1,0 +1,31 @@
+[{
+    "objectKey":"1231321-231",
+    "objectTypeId":"1",
+    "sourcePath":"C:\\Test",
+    "destinationPath":""
+
+},{
+    "objectKey":"1231321-233",
+    "objectTypeId":"3",
+    "sourcePath":"D:\\fileTest",
+    "destinationPath":""
+
+},{
+    "objectKey":"1231321-234",
+    "objectTypeId":"6",
+    "sourcePath":"D:\\fileTestdestination",
+    "destinationPath":""
+
+},{
+    "objectKey":"1231321-234",
+    "objectTypeId":"5",
+    "sourcePath":"D:\\copyTest",
+    "destinationPath":""
+
+},{
+    "objectKey":"1231321-234",
+    "objectTypeId":"9",
+    "sourcePath":"D:\\copyTest2",
+    "destinationPath":""
+
+}]

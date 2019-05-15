@@ -1,13 +1,11 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { getEmailList } from "../actions";
+import { getEmailList, onValidate, ifileRequest } from "../actions";
 import { bindActionCreators } from "redux";
-//import {Container,ListGroup, ListGroupItem, Button } from 'reactstrap';
-import { CSSTransition, TransitionGroup } from "react-transition-group";
-import uuid from "uuid";
+import { Container, Row, Col, Progress } from "reactstrap";
 import Autocomplete from "./AutoComplete";
-import BrowseFile from "./BrowseFile";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.min.css";
 import { PagingState, IntegratedPaging } from "@devexpress/dx-react-grid";
 import {
   Grid,
@@ -20,41 +18,42 @@ import Dropzone from "react-dropzone";
 import Button from "@material-ui/core/Button";
 import { AtomSpinner } from "react-epic-spinners";
 import { OutTable, ExcelRenderer } from "react-excel-renderer";
-import copyfiles from "copyfiles";
-import $ from 'jquery';
+import TreeComponent from "./tree";
 
 class ShoppingList extends Component {
   state = {
     columns: [
       { name: "key", title: "Object Key" },
-      { name: "Id", title: "Object Type ID" }
+      { name: "Id", title: "Object Type ID" },
+      { name: "Status", title: "status" },
+      { name: "message", title: "message" }
     ],
+    value: 0,
     rows: [],
     spinner: false,
-    selectedFile:null,
-    selectedEmails:[]
+    selectedFile: null,
+    selectedEmails: [],
+    newRows: [],
+    updatedRows: [],
+    isUpdated: false,
+    validIds: [],
+    destinationPath: ""
   };
-
-  
-
-  onSubmit=()=>{
-    const {selectedFile} = this.state
-    const absolutePath=document.getElementById("fileId");     
-    const arrayOfPaths=[
-      absolutePath,
-      "D:\fileTestdestination"
-    ]
-    console.log(arrayOfPaths)
-    copyfiles(arrayOfPaths, "-a", function(err) {
-      if (err) console.error(err);
-    });
-  } 
+  onSubmit = () => {
+    const { validIds, selectedEmails, destinationPath } = this.state;
+    let IfileRequestData = {
+      validIds: validIds,
+      selectedEmails: selectedEmails,
+      destinationPath: destinationPath
+    };
+    this.props.ifileRequest(IfileRequestData);
+  };
 
   onBrowseFile = acceptedFile => {
     this.setState({
-      selectedFile:acceptedFile
+      selectedFile: acceptedFile
     });
-  }
+  };
 
   fileHandler = acceptedFile => {
     let fileObj = acceptedFile[0];
@@ -71,11 +70,12 @@ class ShoppingList extends Component {
 
     this.setState({
       spinner: true,
-      errorMsg: "",
+      isUpdated: false,
+      errorMsg: ""
     });
 
     ExcelRenderer(fileObj, (err, resp) => {
-      let newRows = [];
+      const { newRows } = this.state;
       let obj = {};
       if (err) {
         console.log(err);
@@ -88,6 +88,7 @@ class ShoppingList extends Component {
           newRows.push(obj);
         });
         this.setState({
+          newRows,
           rows: newRows,
           spinner: false
         });
@@ -96,126 +97,147 @@ class ShoppingList extends Component {
   };
 
   validate = rows => {
-    let key = [];
+    let id = [];
     rows.filter(tem => {
-      key.push(tem.key);
+      id.push(tem.Id);
     });
+    this.props.onValidate(id);
   };
 
   componentDidMount = () => {
     this.props.getEmailList();
   };
 
-  getMails=(mails)=>{
+  getMails = mails => {
     this.setState({
-      selectedEmails:mails
+      selectedEmails: mails
     });
-  }
+  };
+
+  onSelectPath = e => {
+    this.setState({
+      destinationPath: e.target.value
+    });
+  };
+
+  componentWillReceiveProps = props => {
+    const { rows,  validIds } = this.state;
+    const { validData } = props.item;
+    console.log(props);
+    if (validData) {
+      let updated = rows.map(item => {
+        validData.data.filter(ids => {
+          if (ids.id === item.Id) {
+            item.Status = ids.status;
+            validIds.push(item.Id);
+          }
+        });
+        return item;
+      });
+      this.setState({
+        value: this.state.value++,
+        isUpdated: true,
+        updatedRows: updated,
+        validIds
+      });
+    }
+  };
 
   render() {
-    const { rows, columns } = this.state;
+    console.log(this.props.item.IfileResponse.data);
+    const {
+      rows,
+      columns,
+      updatedRows,
+      isUpdated,
+      value
+    } = this.state;
     if (this.state.spinner) {
       return (
         <AtomSpinner style={{ margin: "auto" }} size="100" color=" #003366" />
       );
     }
-
     return (
-      <div>
-        <h5 className="App">IFILE DOWNLOAD</h5>
-        <hr />
-        <div
-          className="App"
-          style={{
-            width: "50%",
-            float: "left",
-            backgroundColor: "lightgray",
-            padding: "10px"
-          }}
-        >
-          <h5>Import File</h5>
-          <Dropzone onDrop={this.fileHandler} multiple >
-            {({ getRootProps, getInputProps }) => (
-              <section>
-                <div
-                  {...getRootProps()}
-                  style={{
-                    margin: "auto",
-                    width: "500px",
-                    padding: "10px",
-                    border: "1px dotted gray"
-                  }}
+      <Container>
+        <ToastContainer autoClose={2000} />
+        <Row>
+          <Col xs="6" sm="6">
+            <Dropzone onDrop={this.fileHandler} multiple>
+              {({ getRootProps, getInputProps }) => (
+                <section>
+                  <div
+                    {...getRootProps()}
+                    style={{
+                      width: "540px",
+                      padding: "10px",
+                      border: "1px dotted gray"
+                    }}
+                  >
+                    <input
+                      {...getInputProps()}
+                      accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    />
+                    <p>Drop file here, or click to select file</p>
+                  </div>
+                </section>
+              )}
+            </Dropzone>
+            {this.state.errorMsg ? (
+              <p style={{ color: "red" }}>{this.state.errorMsg}</p>
+            ) : (
+              <div>
+                <Paper>
+                  <Grid rows={isUpdated ? updatedRows : rows} columns={columns}>
+                    <PagingState defaultCurrentPage={0} pageSize={10} />
+                    <IntegratedPaging />
+                    <Table />
+                    <TableHeaderRow />
+                    <PagingPanel />
+                  </Grid>
+                </Paper>
+                <Button
+                  style={{ margin: "10px" }}
+                  onClick={this.validate.bind(this, rows)}
+                  variant="contained"
+                  color="primary"
                 >
-                  <input
-                    {...getInputProps()}
-                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                  Validate
+                </Button>
+                <input
+                  type="text"
+                  style={{ width: "350px" }}
+                  id="fileId"
+                  placeholder="paste destination path..."
+                  onChange={e => this.onSelectPath(e)}
+                />
+                <div className="App">
+                  <h5>Email Notification</h5>
+                  <Autocomplete
+                    Emails={this.props.item.EmailList}
+                    getMails={this.getMails}
                   />
-                  <p>Drop file here, or click to select file</p>
                 </div>
-              </section>
+              </div>
             )}
-          </Dropzone>
-          {this.state.errorMsg ? (
-            <p style={{ color: "red" }}>{this.state.errorMsg}</p>
-          ) : (
-            <div style={{ width: "500px", margin: "auto" }}>
-              <Paper>
-                <Grid rows={rows} columns={columns}>
-                  <PagingState defaultCurrentPage={0} pageSize={5} />
-                  <IntegratedPaging />
-                  <Table />
-                  <TableHeaderRow />
-                  <PagingPanel />
-                </Grid>
-              </Paper>
-              <Button
-                style={{ margin: "10px" }}
-                onClick={this.validate.bind(this, rows)}
-                variant="contained"
-                color="primary"
-              >
-                Validate
-              </Button>
-            </div>
-          )}
-        </div>
-        <div
-          style={{
-            width: "50%",
-            float: "left",
-            height: "395px",
-            backgroundColor: "lightgray",
-
-            padding: "10px"
-          }}
-        >
-          <div>
-          <h5>Browse To Target</h5>
-          <input
-            type="file"
-            id="fileId"
-            //directory="" webkitdirectory=""
-            onChange={e => this.onBrowseFile(e.target.files)}
-          />
-        </div>
-        <div>
-          <h5>Target Name</h5>
-          <input type="text" />
-        </div>
-        </div>
-        <div className="App" style={{ width: "50%", margin: "auto" }}>
-          <h5>Email Notification</h5>
-          <Autocomplete Emails={this.props.item.EmailList} getMails={this.getMails} />
-          <Button
-            style={{ margin: "10px" }}
-            variant="contained"
-            color="primary"
-            onClick={this.onSubmit}
-          >
-            Submit
-          </Button>
-        </div>
-      </div>
+          </Col>
+          <Col xs="6" sm="6" style={{ height: "400px", overflow: "auto" }}>
+            <TreeComponent />
+          </Col>
+        </Row>
+        <Progress value={value} />
+        <Row>
+          <Col sm="12" md={{ size: 6, offset: 5 }}>
+            <Button
+              style={{ margin: "10px" }}
+              variant="contained"
+              color="primary"
+              onClick={this.onSubmit}
+            >
+              Submit
+            </Button>
+          </Col>
+        </Row>
+      </Container>
     );
   }
 }
@@ -227,7 +249,9 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch =>
   bindActionCreators(
     {
-      getEmailList: getEmailList
+      getEmailList: getEmailList,
+      onValidate: onValidate,
+      ifileRequest: ifileRequest
     },
     dispatch
   );
